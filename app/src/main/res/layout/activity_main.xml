@@ -1,108 +1,71 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.8" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical">
+    android:id="@+id/linearLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btn_select"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-               android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn_select"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Connect"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout3"
-        android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:layout_weight="0.31"
-        android:orientation="vertical">
-
-        <RelativeLayout
-            android:id="@+id/RelativeLayout1"
-            android:layout_width="match_parent"
-            android:layout_height="292dp"
-            android:layout_weight="4.11"
-            android:orientation="vertical">
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="20dp"
+        android:text="Connect"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 
-            <EditText
-                android:id="@+id/sendText"
-                android:layout_width="102dp"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_toLeftOf="@+id/sendButton"
-                android:ems="10"
-                android:enabled="false"
-                android:fontFamily="1"
-                android:lines="1"
-                android:maxLength="20"
-                android:maxLines="1"
-                android:shadowRadius="1"/>
-
-            <ListView
-                android:id="@+id/listMessage"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_above="@+id/sendButton"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true">
-            </ListView>
-
-            <Button
-                android:id="@+id/sendButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
-                android:enabled="false"
-                android:text="Send" />
-
-        </RelativeLayout>
-    </LinearLayout>
-
-    <RelativeLayout
-        android:id="@+id/RelativeLayout2"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/temperature"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:layout_marginTop="10dp"
-        android:orientation="vertical" >
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="24dp"
+        android:gravity="center_vertical|center_horizontal"
+        android:textSize="28sp"
+        app:layout_constraintEnd_toStartOf="@+id/sampleTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/deviceName" />
 
-        <TextView
-            android:id="@+id/deviceLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/device" />
+    <TextView
+        android:id="@+id/deviceLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="16dp"
+        android:gravity="left|center_vertical"
+        android:text="@string/device"
+        app:layout_constraintBaseline_toBaselineOf="@+id/deviceName"
+        app:layout_constraintEnd_toStartOf="@+id/deviceName"
+        app:layout_constraintStart_toStartOf="parent" />"
 
-        <TextView
-            android:id="@+id/deviceName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_marginLeft="18dp"
-            android:layout_toRightOf="@+id/deviceLabel"
-            android:text="@string/no_device"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+    <TextView
+        android:id="@+id/deviceName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:gravity="right|center_vertical"
+        android:text="@string/no_device"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/deviceLabel"
+        app:layout_constraintTop_toBottomOf="@+id/btn_select" />
 
-        <TextView
-            android:id="@+id/rssival"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            android:text="_"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-    </RelativeLayout>
+    <TextView
+        android:id="@+id/sampleTime"
+        android:layout_width="55dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBaseline_toBaselineOf="@+id/temperature"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-</LinearLayout>
+
+</android.support.constraint.ConstraintLayout>
+
