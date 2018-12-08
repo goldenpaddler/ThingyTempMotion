@@ -1,7 +1,9 @@
 package com.doggonics.thingytempmotion;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -12,6 +14,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.os.TestLooperManager;
 import android.support.v4.content.LocalBroadcastManager;
@@ -20,6 +27,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import java.lang.String;
 
 
 
@@ -27,14 +35,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.components.MarkerImage;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+
 import java.io.UnsupportedEncodingException;
-import java.sql.Time;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
+    private float startSampleTime;
     private static final int REQUEST_SELECT_DEVICE=1;
     private static final int REQUEST_ENABLE_BT=2;
     private static final int THINGY_PROFILE_READY =10;
@@ -51,6 +71,13 @@ public class MainActivity extends AppCompatActivity  {
     private TextView tvsampleTime;
     private Button btnConnectDisconnect;
 
+    private SensorManager mSensorManager;
+    private Sensor mTempSensor;
+    
+    private LineChart mChart;
+    private Thread thread;
+    private boolean plotData=true;
+    
 
 
     @Override
@@ -64,10 +91,52 @@ public class MainActivity extends AppCompatActivity  {
             return;
         }
         tvTemperature= findViewById(R.id.temperature);
+        tvsampleTime=findViewById(R.id.sampleTime);
+        tvsampleTime.setVisibility(View.INVISIBLE);
         btnConnectDisconnect=findViewById(R.id.btn_select);
+        mChart=(LineChart)findViewById(R.id.lineChart);
+        
+        mSensorManager= (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mTempSensor=mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        if(mTempSensor!=null){
+            mSensorManager.registerListener(this,mTempSensor,SensorManager.SENSOR_DELAY_GAME);
+        }
+
+        mChart.setTouchEnabled(false);
+        mChart.setDragEnabled(false);
+        mChart.setScaleEnabled(false);
+        mChart.setPinchZoom(false);
+        mChart.getDescription().setEnabled(false);
+        mChart.getDescription().setText("Temperature");
+        mChart.setBackgroundColor(Color.WHITE);
+         
+        LimitLine lower_limit=new LimitLine(32f,"Low");
+        lower_limit.setLineWidth(4f);
+        lower_limit.setLineColor(Color.BLUE);
+        lower_limit.enableDashedLine(10f,10f,0f);
+        lower_limit.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_BOTTOM);
+        lower_limit.setTextSize(15f);
+        lower_limit.setTextColor(Color.BLUE);
+
+        YAxis leftAxis=mChart.getAxisLeft();
+        leftAxis.removeAllLimitLines();
+        leftAxis.addLimitLine(lower_limit);
+        leftAxis.setAxisMaximum(40f);
+        leftAxis.setAxisMinimum(15f);
+
+        mChart.getAxisRight().setEnabled(false);
+        XAxis xAxis=mChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
 
 
+        LineData data=new LineData();
+        data.setValueTextColor(Color.WHITE);
+        mChart.setData(data);
+
+                     
         service_init();
+        startPlot();
+
 
         //handle Disconnect amd Connect button
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener(){
@@ -97,6 +166,25 @@ public class MainActivity extends AppCompatActivity  {
         });
     }
 
+    private void startPlot(){
+        if(thread!=null){
+            thread.interrupt();
+        }
+        thread=new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(true){
+                    plotData=true;
+                    try{
+                        Thread.sleep(10);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        thread.start();
+    }
     @Override
     protected void onStart() {
         super.onStart();
@@ -104,14 +192,18 @@ public class MainActivity extends AppCompatActivity  {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        thread.interrupt();
+        mSensorManager.unregisterListener(MainActivity.this);
         Log.d(TAG,"onDestroy");
         try{
             LocalBroadcastManager.getInstance(this).unregisterReceiver(ThingyStatusChangeReceiver);
         }catch(Exception ignore){
             Log.e(TAG,ignore.toString());
         }
-        unbindService(mServiceConnection);
+        if(mService!=null){mService.close();}
+        if(mServiceConnection!=null){unbindService(mServiceConnection);}
+        super.onDestroy();
+
     }
 
     @Override
@@ -124,6 +216,10 @@ public class MainActivity extends AppCompatActivity  {
     protected void onPause(){
         Log.d(TAG,"OnPause");
         super.onPause();
+        if(thread!=null){
+            thread.interrupt();
+        }
+        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -141,6 +237,7 @@ public class MainActivity extends AppCompatActivity  {
             Intent enableIntent=new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent,REQUEST_ENABLE_BT);
         }
+        mSensorManager.registerListener(this,mTempSensor,SensorManager.SENSOR_DELAY_GAME);
     }
 
     private void service_init(){
@@ -184,6 +281,7 @@ public class MainActivity extends AppCompatActivity  {
                         btnConnectDisconnect.setText("Disconnect");
                         ((TextView)findViewById(R.id.deviceName)).setText(mBtDevice.getName()+" ready");
                         mState=THINGY_PROFILE_CONNECTED;
+
                     }
                 }));
             }
@@ -205,6 +303,7 @@ public class MainActivity extends AppCompatActivity  {
             if(ThingyService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)){
                 Log.d(TAG,"BLE GATT Services discovered");
                 mService.enableTempNotification();
+                startSampleTime= new Date().getTime();
             }
 
             if (ThingyService.ACTION_DATA_AVAILABLE.equals(action)){
@@ -216,9 +315,15 @@ public class MainActivity extends AppCompatActivity  {
                         try{
                             int tempWhole= tempBytes[0];
                             int tempFract=tempBytes[1];
-                            Double TempValue=(tempWhole+tempFract/(double)100);
+                            float TempValue=(tempWhole+tempFract/(float)100);
                             tvTemperature.setText(String.valueOf(TempValue));
-                            //tvsampleTime.setText(DateFormat.getDateTimeInstance().format((new Date())));
+                            SimpleDateFormat timeFormat=new SimpleDateFormat("ss");
+                            String timeNow=timeFormat.format(new Date());
+                            tvsampleTime.setText(timeNow);
+                            float sampleTime=new Date().getTime();
+                            float timeValue=(startSampleTime-sampleTime)/1000;
+
+                            addEntry(timeValue,TempValue);
                         }catch (Exception e){
                             Log.e(TAG,e.toString());
                         }
@@ -305,5 +410,46 @@ public class MainActivity extends AppCompatActivity  {
          Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        Log.d(TAG,"new Temperature value");
+        if(plotData){
+            //addEntry(sensorEvent);
+            plotData=false;
+        }
+    }
+
+    public void addEntry(float timeValue, float sensorValue){
+        LineData data=mChart.getData();
+        Log.d(TAG, Float.toString(sensorValue));
+        if (data != null) {
+            ILineDataSet set=data.getDataSetByIndex(0);
+            if(set==null){
+                set=createSet();
+               data.addDataSet(set);
+            }
+            data.addEntry(new Entry(set.getEntryCount(),sensorValue),0);
+
+            data.notifyDataChanged();
+            mChart.notifyDataSetChanged();
+            mChart.setVisibleXRangeMaximum(20);
+            mChart.moveViewToX(data.getEntryCount());
+        }
+    }
+    
+    private LineDataSet createSet(){
+        LineDataSet set=new LineDataSet(null,"Chest");
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setLineWidth(3f);
+        set.setColor(Color.MAGENTA);
+        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        set.setCubicIntensity(0.2f);
+        set.setDrawValues(false);
+        return set;
+    }
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        
+    }
 }
 

@@ -45,7 +45,7 @@ public class DeviceListActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
 
     //private BluetoothAdapter mBtAdapter;
-    private TextView mEmptyList;
+    private TextView mscanStatus;
     public static final String TAG="DeviceListActivity";
     private static final int REQUEST_BT_ENABLE=1;
     private BluetoothLeScanner mBluetoothLeScanner;
@@ -69,6 +69,7 @@ public class DeviceListActivity extends AppCompatActivity {
         android.view.WindowManager.LayoutParams layoutParams=this.getWindow().getAttributes();
         layoutParams.gravity= Gravity.TOP;
         layoutParams.y=200;
+        mscanStatus=findViewById(R.id.scanStatus);
         mHandler=new Handler();
         //Use this to determine whether BLE is supported ont the device.
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)){
@@ -239,11 +240,11 @@ public class DeviceListActivity extends AppCompatActivity {
                 public void run() {
                     mScanning = false;
                     mBluetoothLeScanner.stopScan(mLeScanCallback);
-                    //mEmptyList.setText("Scan Complete");
+                    mscanStatus.setText("Scan Complete");
                 }
             }, SCAN_PERIOD);
             mScanning = true;
-            //mEmptyList.setText("Scanning...");
+            mscanStatus.setText("Scanning...");
             String pattern="/.*/";
             ScanFilter scanFilter=new ScanFilter.Builder().setDeviceName("myThingy").build();
             List<ScanFilter> scanFilters= new ArrayList<ScanFilter>();

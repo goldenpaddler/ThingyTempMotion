@@ -99,7 +99,6 @@ public class ThingyService extends Service {
                 Log.i(TAG,"Disconnected from GATT Server");
                 broadcastUpdate(intentAction);
             }
-
         }
 
         @Override
@@ -183,9 +182,10 @@ public class ThingyService extends Service {
             return false;
         }
         //Previously connected device. Try to reconnect cache may not be updatae
-        if (mBluetoothAdapter != null
-                            && bluetoothAddress.equals(mBluetoothDeviceAddress)
-                            && mBluetoothGatt!=null) {
+        if (bluetoothAddress.equals(mBluetoothDeviceAddress)
+            && mBluetoothDeviceAddress!=null
+            && mBluetoothGatt!=null) {
+            Log.d(TAG,"Trying to use an existing mBluetoothGatt for connection");
             if (mBluetoothGatt.connect()) {
                 mConnectionState=STATE_CONNECTED;
                 return true;
@@ -220,15 +220,17 @@ public class ThingyService extends Service {
             return;
         }
         mBluetoothGatt.disconnect();
-        //mBluetoothGatt.close();
     }
 
     /**
      * After using a BLE device, the app must call this method to ensure resources are released.
      * close() will NOT call onConnectionStateCahage.
      */
-    public void close(){
-        if(mBluetoothGatt==null){return;};
+    public void close() {
+        if (mBluetoothGatt == null) {
+            Log.d(TAG, "BluetoothGatt is null");
+            return;
+        }
         Log.w(TAG,"mBluetoothGatt closed");
         mBluetoothDeviceAddress=null;
         mBluetoothGatt.close();
